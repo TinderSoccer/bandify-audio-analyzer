@@ -1,0 +1,32 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a14;
+  --bg2:      #0f0f1c;
+  --bg3:      #14141f;
+  --border:   #1e1e35;
+  --purple:   #534AB7;
+  --purple-l: #7F77DD;
+  --purple-bg:#1a1a2e;
+  --green:    #1D9E75;
+  --green-bg: #0d2318;
+  --amber:    #BA7517;
+  --amber-bg: #1f1a08;
+  --text:     #e2e0d8;
+  --text-2:   #888780;
+  --text-3:   #444441;
+  --white:    #ffffff;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
