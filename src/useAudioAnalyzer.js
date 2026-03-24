@@ -47,20 +47,17 @@ function detectKey(rawSignal, sampleRate) {
   let count = 0
   const limit = Math.min(rawSignal.length, sampleRate * 20) // first 20s
 
-  // Initialize Meyda with the signal
-  try {
-    Meyda.setSource(rawSignal)
-  } catch (_) {}
-
   for (let i = 0; i + segLen < limit; i += segLen) {
     const frame = Array.from(rawSignal.slice(i, i + segLen))
     try {
       const result = Meyda.extract(['chroma'], frame)
-      if (result?.chroma && Array.isArray(result.chroma)) {
+      if (result?.chroma && Array.isArray(result.chroma) && result.chroma.length === 12) {
         result.chroma.forEach((v, k) => { chroma[k] += v })
         count++
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error('Chroma extract error:', e)
+    }
   }
 
   if (count === 0) {
@@ -87,11 +84,6 @@ function extractMFCC(rawSignal, sampleRate) {
   let count = 0
   const limit = Math.min(rawSignal.length, sampleRate * 30) // first 30s
 
-  // Initialize Meyda with the signal
-  try {
-    Meyda.setSource(rawSignal)
-  } catch (_) {}
-
   for (let i = 0; i + frameSize < limit; i += frameSize) {
     const frame = Array.from(rawSignal.slice(i, i + frameSize))
     try {
@@ -100,12 +92,14 @@ function extractMFCC(rawSignal, sampleRate) {
         result.mfcc.forEach((v, k) => { mfccAccum[k] += v })
         count++
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error('MFCC extract error:', e)
+    }
   }
 
   if (count === 0) {
-    // Fallback: use random values
-    for (let k = 0; k < 13; k++) mfccAccum[k] = Math.random() * 5
+    // Fallback: use default values
+    for (let k = 0; k < 13; k++) mfccAccum[k] = 50 - k * 3
     count = 1
   }
 
@@ -236,6 +230,7 @@ export function useAudioAnalyzer() {
       log('✓ Análisis completado exitosamente')
 
     } catch (e) {
+      console.error('Analysis error:', e)
       setError(e.message || 'Error desconocido')
       setState('error')
     }
