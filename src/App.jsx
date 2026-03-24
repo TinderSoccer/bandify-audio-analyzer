@@ -222,14 +222,16 @@ export default function App() {
             <div style={s.card}>
               <div style={s.title}>Perfil detectado</div>
               <div style={{ marginBottom: 10 }}>
-                {result.energy > 0.6
-                  ? [['Indie rock','#1e1a3e','#AFA9EC'],['Post-rock','#1e1a3e','#AFA9EC']]
-                  : result.energy > 0.35
-                  ? [['Alternativo','#1e1a3e','#AFA9EC'],['Pop','#0d2318','#5DCAA5']]
-                  : [['Folk','#1a1a08','#EF9F27'],['Acústico','#0d2318','#5DCAA5']]
-                }.map(([g, bg, tc]) => (
-                  <span key={g} style={s.tag(bg, tc)}>{g}</span>
-                ))}
+                {(() => {
+                  const genres = result.energy > 0.6
+                    ? [['Indie rock','#1e1a3e','#AFA9EC'],['Post-rock','#1e1a3e','#AFA9EC']]
+                    : result.energy > 0.35
+                    ? [['Alternativo','#1e1a3e','#AFA9EC'],['Pop','#0d2318','#5DCAA5']]
+                    : [['Folk','#1a1a08','#EF9F27'],['Acústico','#0d2318','#5DCAA5']]
+                  return genres.map(([g, bg, tc]) => (
+                    <span key={g} style={s.tag(bg, tc)}>{g}</span>
+                  ))
+                })()}
                 <span style={s.tag('#14141f', '#888780')}>{result.bpm} BPM</span>
                 <span style={s.tag('#14141f', '#888780')}>{result.key} {result.isMajor ? 'M' : 'm'}</span>
               </div>
