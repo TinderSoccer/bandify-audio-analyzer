@@ -124,19 +124,74 @@ function buildVector(bpm, energy, mfcc, chroma) {
   ]
 }
 
-// Simulate compatible musicians based on the audio profile
-function simulateMatches(energy, bpm) {
-  const profiles = [
-    { initials: 'CG', name: 'Carlos González', role: 'Baterista', city: 'Santiago' },
-    { initials: 'VP', name: 'Valentina Paz',   role: 'Productora', city: 'Valparaíso' },
-    { initials: 'AR', name: 'Andrés Reyes',    role: 'Bajista',    city: 'Santiago' },
-    { initials: 'MF', name: 'Matías Fuentes',  role: 'Guitarrista', city: 'Concepción' },
+// Build music profile with genre and reasoning based on audio features
+function buildProfile(bpm, energy, isMajor, acoustic, mfcc) {
+  // Determine tempo category
+  let tempoLabel = 'Moderado'
+  let tempoGenres = 'Pop, Rock Alternativo'
+  if (bpm < 80) {
+    tempoLabel = 'Lento'
+    tempoGenres = 'Folk, Blues, Balada'
+  } else if (bpm >= 120 && bpm <= 150) {
+    tempoLabel = 'Rápido'
+    tempoGenres = 'Punk, Reggaeton, Hip-hop'
+  } else if (bpm > 150) {
+    tempoLabel = 'Muy Rápido'
+    tempoGenres = 'Metal, Drum & Bass'
+  }
+
+  // Energy level
+  let energyLabel = 'Media'
+  let energyGenres = 'Pop, Alternativo'
+  if (energy > 0.6) {
+    energyLabel = 'Alta'
+    energyGenres = 'Rock, Metal, Electrónico'
+  } else if (energy < 0.35) {
+    energyLabel = 'Baja'
+    energyGenres = 'Folk, Acústico, Ambient'
+  }
+
+  // Mood from major/minor
+  const moodLabel = isMajor ? 'Mayor (Alegre)' : 'Menor (Melancólico)'
+  const moodGenres = isMajor ? 'Pop, Indie, Electrónico' : 'Rock, Indie Rock, Post-Rock'
+
+  // Acoustic character
+  const acousticLabel = acoustic > 0.5 ? 'Acústico' : 'Amplificado/Electrónico'
+  const acousticGenres = acoustic > 0.5 ? 'Orgánico' : 'Distorsionado'
+
+  // Determine primary genre by combining factors
+  let primaryGenre = 'Rock Alternativo'
+  let secondaryGenre = 'Indie'
+
+  if (energy > 0.6) {
+    if (bpm > 150) primaryGenre = 'Metal'
+    else if (bpm > 120) primaryGenre = 'Punk Rock'
+    else primaryGenre = 'Rock'
+  } else if (energy < 0.35) {
+    primaryGenre = 'Folk Acústico'
+    secondaryGenre = 'Ambient'
+  } else {
+    if (bpm > 120) primaryGenre = 'Indie Rock'
+    else primaryGenre = 'Pop Alternativo'
+  }
+
+  // Refine based on mood
+  if (!isMajor && primaryGenre.includes('Pop')) primaryGenre = 'Indie Pop'
+  if (!isMajor && energy > 0.5) primaryGenre = 'Post-Rock'
+
+  // Build reasoning array
+  const reasoning = [
+    { icon: '🎵', label: 'Tempo', value: `${bpm} BPM`, detail: `${tempoLabel} · ${tempoGenres}` },
+    { icon: '⚡', label: 'Energía', value: `${(energy * 100).toFixed(0)}%`, detail: `${energyLabel} · ${energyGenres}` },
+    { icon: '🎹', label: 'Tonalidad', value: moodLabel, detail: 'Indica el carácter emocional' },
+    { icon: '🎸', label: 'Timbre', value: `mfcc[0]=${mfcc[0].toFixed(0)}`, detail: `${acousticLabel} · ${acousticGenres}` },
   ]
-  const base = 72 + Math.round(energy * 18) + Math.round((bpm - 120) / 20)
-  return profiles.map((p, i) => ({
-    ...p,
-    compat: Math.max(52, Math.min(97, base - i * 6 + Math.floor(Math.random() * 5))),
-  }))
+
+  return {
+    genre: primaryGenre,
+    subgenre: secondaryGenre,
+    reasoning,
+  }
 }
 
 export function useAudioAnalyzer() {
@@ -219,11 +274,11 @@ export function useAudioAnalyzer() {
       if (!mfcc || mfcc.length !== 13) throw new Error('Error al extraer MFCC')
       log(`MFCC extraídos: [${mfcc.slice(0, 3).join(', ')}...]`)
 
-      // 7. Vector
+      // 7. Vector + Profile
       log('Construyendo vector de compatibilidad (27 dim)...', 'active')
       const vector = buildVector(bpm, energy, mfcc, chroma)
       const acoustic = Math.max(0, Math.min(1, 1 - energy * 1.1))
-      const matches = simulateMatches(energy, bpm)
+      const profile = buildProfile(bpm, energy, isMajor, acoustic, mfcc)
       log('Vector listo para pgvector ✓')
 
       // Store raw signal in ref instead of state to avoid React issues with large TypedArrays
@@ -242,7 +297,7 @@ export function useAudioAnalyzer() {
         chroma,
         mfcc,
         vector,
-        matches,
+        profile,
       }
       setResult(resultData)
       setState('done')

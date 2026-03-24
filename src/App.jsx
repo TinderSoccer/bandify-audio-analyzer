@@ -42,34 +42,11 @@ const s = {
     background: color, color: textColor, margin: '2px 3px',
     border: `0.5px solid ${textColor}40`,
   }),
-  // Compat row
-  compatRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '0.5px solid #1a1a2e' },
-  avatar: (bg = '#1a1a2e', c = '#AFA9EC') => ({
-    width: 36, height: 36, borderRadius: '50%', background: bg,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 12, fontWeight: 600, color: c, flexShrink: 0,
-  }),
   // Button
   btn: { background: '#534AB7', color: '#EEEDFE', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer', width: '100%' },
   btnOutline: { background: 'transparent', color: '#888780', border: '0.5px solid #2e2e50', borderRadius: 8, padding: '8px 16px', fontSize: 12, cursor: 'pointer' },
 }
 
-const avatarColors = [
-  ['#1e1a3e', '#AFA9EC'], ['#0d2318', '#5DCAA5'],
-  ['#2a1a2e', '#ED93B1'], ['#1a1a08', '#EF9F27'],
-]
-
-function CompatPct({ pct }) {
-  const color = pct >= 80 ? '#7F77DD' : pct >= 70 ? '#1D9E75' : '#D85A30'
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-      <div style={s.barWrap}>
-        <div style={s.barFill(pct, color)} />
-      </div>
-      <span style={{ fontSize: 14, fontWeight: 600, color, width: 38, textAlign: 'right' }}>{pct}%</span>
-    </div>
-  )
-}
 
 function StepIcon({ status }) {
   if (status === 'active') return (
@@ -207,58 +184,74 @@ export default function App() {
             </div>
           </div>
 
-          {/* MFCC + Genre */}
-          <div style={{ ...s.grid2, marginBottom: 16 }}>
-            <div style={s.card}>
-              <div style={s.title}>MFCC — huella tímbrica (13 coef.)</div>
-              <MFCCChart mfcc={result.mfcc} />
-              <div style={{ ...s.sub, marginTop: 8 }}>
-                [{result.mfcc.slice(0, 4).join(', ')}...]
-              </div>
-              <div style={{ fontSize: 11, color: '#444441', marginTop: 4 }}>
-                Vector de 13 coeficientes · Se normaliza a vector(27) para pgvector
-              </div>
+          {/* MFCC Chart */}
+          <div style={s.card}>
+            <div style={s.title}>MFCC — huella tímbrica (13 coef.)</div>
+            <MFCCChart mfcc={result.mfcc} />
+            <div style={{ ...s.sub, marginTop: 8 }}>
+              [{result.mfcc.slice(0, 4).join(', ')}...]
             </div>
-            <div style={s.card}>
-              <div style={s.title}>Perfil detectado</div>
-              <div style={{ marginBottom: 10 }}>
-                {(() => {
-                  const genres = result.energy > 0.6
-                    ? [['Indie rock','#1e1a3e','#AFA9EC'],['Post-rock','#1e1a3e','#AFA9EC']]
-                    : result.energy > 0.35
-                    ? [['Alternativo','#1e1a3e','#AFA9EC'],['Pop','#0d2318','#5DCAA5']]
-                    : [['Folk','#1a1a08','#EF9F27'],['Acústico','#0d2318','#5DCAA5']]
-                  return genres.map(([g, bg, tc]) => (
-                    <span key={g} style={s.tag(bg, tc)}>{g}</span>
-                  ))
-                })()}
-                <span style={s.tag('#14141f', '#888780')}>{result.bpm} BPM</span>
-                <span style={s.tag('#14141f', '#888780')}>{result.key} {result.isMajor ? 'M' : 'm'}</span>
-              </div>
-              <div style={s.body}>
-                Energía {result.energy > 0.6 ? 'alta' : result.energy > 0.3 ? 'media' : 'baja'} ·{' '}
-                {result.acoustic > 0.5 ? 'Acústico' : 'Amplificado/electrónico'} ·{' '}
-                Tonalidad {result.isMajor ? 'mayor (alegre)' : 'menor (melancólico)'}
-              </div>
+            <div style={{ fontSize: 11, color: '#444441', marginTop: 4 }}>
+              Vector de 13 coeficientes · Se normaliza a vector(27) para pgvector
             </div>
           </div>
 
-          {/* Matches */}
+          {/* Musical Profile */}
           <div style={s.card}>
-            <div style={s.title}>Músicos compatibles con este perfil</div>
-            <div style={{ fontSize: 12, color: '#444441', marginBottom: 14 }}>
-              Simulación basada en el análisis — en producción usa pgvector con ORDER BY audio_vector &lt;=&gt; $1
-            </div>
-            {result.matches.map((m, i) => (
-              <div key={m.name} style={{ ...s.compatRow, borderBottom: i === result.matches.length - 1 ? 'none' : '0.5px solid #1a1a2e' }}>
-                <div style={s.avatar(...avatarColors[i % avatarColors.length])}>{m.initials}</div>
-                <div style={{ minWidth: 140 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#e2e0d8' }}>{m.name}</div>
-                  <div style={{ fontSize: 11, color: '#888780' }}>{m.role} · {m.city}</div>
-                </div>
-                <CompatPct pct={m.compat} />
+            <div style={s.title}>Perfil musical detectado</div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 20, fontWeight: 600, color: '#7F77DD', marginBottom: 8 }}>
+                {result.profile.genre}
               </div>
-            ))}
+              <span style={s.tag('#1e1a3e', '#AFA9EC')}>{result.profile.genre}</span>
+              <span style={s.tag('#1a1a2e', '#AFA9EC')} style={{ marginLeft: 8 }}>
+                {result.profile.subgenre}
+              </span>
+            </div>
+
+            <div style={{ fontSize: 13, color: '#888780', marginBottom: 16, lineHeight: 1.6 }}>
+              Análisis basado en tempo, energía, tonalidad y características tímbricas del audio.
+            </div>
+
+            {/* Traits breakdown */}
+            <div style={{ borderTop: '1px solid #1a1a2e', paddingTop: 16 }}>
+              {result.profile.reasoning.map((trait, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '40px 1fr 140px',
+                    gap: 12,
+                    alignItems: 'start',
+                    paddingBottom: 12,
+                    marginBottom: 12,
+                    borderBottom: i === result.profile.reasoning.length - 1 ? 'none' : '0.5px solid #1a1a2e',
+                  }}
+                >
+                  <div style={{ fontSize: 18, textAlign: 'center' }}>{trait.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#888780', textTransform: 'uppercase', marginBottom: 4 }}>
+                      {trait.label}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#e2e0d8', fontWeight: 500, marginBottom: 4 }}>
+                      {trait.value}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#888780' }}>
+                      {trait.detail}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, color: '#534AB7', fontWeight: 500 }}>
+                      {trait.label === 'Energía' ? (
+                        <div style={s.barWrap}>
+                          <div style={s.barFill(result.energy * 100, '#534AB7')} />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Vector */}
