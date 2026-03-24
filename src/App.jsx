@@ -82,7 +82,7 @@ function StepIcon({ status }) {
 }
 
 export default function App() {
-  const { state, progress, result, error, analyze } = useAudioAnalyzer()
+  const { state, progress, result, error, analyze, rawSignal } = useAudioAnalyzer()
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef(null)
 
@@ -180,7 +180,7 @@ export default function App() {
                 ✓ Análisis completo
               </div>
             </div>
-            <Waveform rawSignal={result.rawSignal} />
+            <Waveform rawSignal={rawSignal} />
           </div>
 
           {/* Metrics */}

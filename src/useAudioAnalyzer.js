@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Meyda from 'meyda'
 
 const KEYS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
@@ -144,6 +144,7 @@ export function useAudioAnalyzer() {
   const [progress, setProgress] = useState([])
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const rawSignalRef = useRef(null)
 
   const log = (msg, status = 'done') => {
     setProgress(p => [...p, { msg, status, ts: Date.now() }])
@@ -209,6 +210,9 @@ export function useAudioAnalyzer() {
       const matches = simulateMatches(energy, bpm)
       log('Vector listo para pgvector ✓')
 
+      // Store raw signal in ref instead of state to avoid React issues with large TypedArrays
+      rawSignalRef.current = raw
+
       const resultData = {
         fileName: file.name,
         duration: audioBuffer.duration,
@@ -223,7 +227,6 @@ export function useAudioAnalyzer() {
         mfcc,
         vector,
         matches,
-        rawSignal: raw,
       }
       setResult(resultData)
       setState('done')
@@ -236,5 +239,5 @@ export function useAudioAnalyzer() {
     }
   }, [])
 
-  return { state, progress, result, error, analyze }
+  return { state, progress, result, error, analyze, rawSignal: rawSignalRef.current }
 }
