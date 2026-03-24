@@ -165,22 +165,38 @@ export function useAudioAnalyzer() {
       // 2. Decode audio
       log('Decodificando con Web Audio API...', 'active')
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-      let audioBuffer
-      try {
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuf)
-      } catch (e) {
-        throw new Error('No se pudo decodificar el archivo. Prueba con un mp3 o wav válido.')
-      }
-      if (!audioBuffer) throw new Error('Buffer de audio vacío')
-      const raw = audioBuffer.getChannelData(0)
-      const sr = audioBuffer.sampleRate
-      if (!raw || raw.length === 0) throw new Error('Señal de audio vacía')
-      log(`Decodificado · ${audioBuffer.duration.toFixed(1)}s · ${sr}Hz · ${audioBuffer.numberOfChannels}ch`)
 
       // Resume audio context if needed
       if (audioCtx.state === 'suspended') {
         await audioCtx.resume()
       }
+
+      let audioBuffer
+      try {
+        // Use promise-based decodeAudioData if available, otherwise use callback
+        if (audioCtx.decodeAudioData.length === 1) {
+          // Promise-based API (modern browsers)
+          audioBuffer = await audioCtx.decodeAudioData(arrayBuf)
+        } else {
+          // Callback-based API (older browsers)
+          audioBuffer = await new Promise((resolve, reject) => {
+            audioCtx.decodeAudioData(
+              arrayBuf,
+              (decoded) => resolve(decoded),
+              (err) => reject(err)
+            )
+          })
+        }
+      } catch (e) {
+        console.error('Decode error:', e)
+        throw new Error('No se pudo decodificar el archivo. Prueba con un mp3 o wav válido.')
+      }
+
+      if (!audioBuffer) throw new Error('Buffer de audio vacío')
+      const raw = audioBuffer.getChannelData(0)
+      const sr = audioBuffer.sampleRate
+      if (!raw || raw.length === 0) throw new Error('Señal de audio vacía')
+      log(`Decodificado · ${audioBuffer.duration.toFixed(1)}s · ${sr}Hz · ${audioBuffer.numberOfChannels}ch`)
 
       // 3. BPM
       log('Detectando tempo (autocorrelación)...', 'active')
